@@ -155,15 +155,16 @@ export class Colony {
     }
 
     private handleMiner(miner: Drone): void {
+        const source = getObjectById<Source>(miner.memory.assignment);
         if (miner.store[RESOURCE_ENERGY] <= 0) {
-            const source = getObjectById<Source>(miner.memory.assignment);
             if (source) {
                 miner.task = Tasks.harvest(source);
             } else {
                 console.log(`Miner ${miner.name} does not have a source assignment; manual assignment needed.`);
             }
         } else {
-            const container = miner.pos.findClosestByRange(miner.pos.findInRange(this.containers, 2));
+            const container = miner.pos.findClosestByRange(source ? source.pos.findInRange(this.containers, 1) : []) ||
+                miner.pos.findClosestByRange(miner.pos.findInRange(this.containers, 2));
             if (container) {
                 miner.task = Tasks.transfer(container);
                 return;
