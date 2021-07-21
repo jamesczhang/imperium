@@ -34,6 +34,7 @@ export class Colony {
     public sources: Source[];
     public containers: StructureContainer[];
     public spawns: StructureSpawn[];
+    public towers: StructureTower[];
     public storage?: StructureStorage;
 
     public constructionSites: ConstructionSite[];
@@ -64,6 +65,7 @@ export class Colony {
         this.extensions = this.structuresByType(STRUCTURE_EXTENSION) as StructureExtension[];
         this.containers = this.structuresByType(STRUCTURE_CONTAINER) as StructureContainer[];
         this.spawns = this.structuresByType(STRUCTURE_SPAWN) as StructureSpawn[];
+        this.towers = this.structuresByType(STRUCTURE_TOWER) as StructureTower[];
         this.storage = this.room.storage;
 
         this.sources = this.room.find(FIND_SOURCES);
@@ -103,6 +105,9 @@ export class Colony {
 
     public run(): void {
         this.checkPopulation();
+        for (const tower of this.towers) {
+            this.handleTower(tower);
+        }
         for (const miner of this.dronesByRole("miner")) {
             if (miner.isIdle)
                 this.handleMiner(miner);
@@ -154,6 +159,25 @@ export class Colony {
         return ERR_NOT_FOUND;
     }
 
+    private handleTower(tower: StructureTower): void {
+        if (tower.store[RESOURCE_ENERGY] <= 0) return;
+        const attackTarget = tower.pos.findClosestByRange(this.hostiles);
+        if (attackTarget) {
+            tower.attack(attackTarget);
+            return;
+        }
+        const healTarget = tower.pos.findClosestByRange(_.filter(this.drones, (d) => d.hits < d.hitsMax));
+        if (healTarget) {
+            tower.heal(healTarget.creep);
+            return;
+        }
+        const repairTarget = tower.pos.findClosestByRange(_.filter(this.repairables, (s) => s.hits < 0.9 * s.hitsMax));
+        if (repairTarget) {
+            tower.repair(repairTarget);
+            return;
+        }
+    }
+
     private handleMiner(miner: Drone): void {
         const source = getObjectById<Source>(miner.memory.assignment);
         if (miner.store[RESOURCE_ENERGY] <= 0) {
@@ -195,7 +219,7 @@ export class Colony {
             }
         } else {
             const refillTargets = _.filter(_.compact([...this.spawns, ...this.extensions]), (s) => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-            const target = hauler.pos.findClosestByRange(refillTargets);
+            const target = hauler.pos.findClosestByRange(refillTargets) || hauler.pos.findClosestByRange(_.filter(this.towers, (t) => t.store.getFreeCapacity(RESOURCE_ENERGY) > 0));
             if (target) {
                 hauler.task = Tasks.transfer(target);
             } else if (this.storage) {
