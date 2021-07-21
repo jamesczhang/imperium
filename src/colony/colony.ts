@@ -1,7 +1,7 @@
 import _ from "lodash";
+import { getObjectById } from "../ahead/utils";
 import { Drone } from "../drone";
 import { Tasks } from "../tasks";
-import { getObjectById } from "../utils";
 
 declare global {
     interface Game {

@@ -1,4 +1,4 @@
-import { getObjectById } from "../utils";
+import { getObjectById } from "../ahead/utils";
 import { BuildTarget, BuildTask } from "./instances/build";
 import { DropTarget, DropTask } from "./instances/drop";
 import { GotoTarget, GotoTask } from "./instances/go-to";

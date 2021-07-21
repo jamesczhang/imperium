@@ -1,7 +1,7 @@
-import "./prototypes";
+import "./ahead/prototypes";
+import { Mem } from "./ahead/utils";
 import { Colony } from "./colony";
 import { Drone } from "./drone";
-import { Mem } from "./utils";
 
 Mem.format();
 
