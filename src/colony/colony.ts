@@ -98,7 +98,7 @@ export class Colony {
                 }
             }
             if (this.dronesByAssignment(source.id).length < Math.min(3, source.pos.availableNeighbours(true).length)) {
-                this.spawnDrone("miner", [WORK, WORK, CARRY, MOVE], source.id);
+                this.spawnDrone("miner", [WORK, WORK, CARRY, MOVE], Infinity, source.id);
             }
         }
     }
@@ -143,10 +143,10 @@ export class Colony {
         return 4;
     }
 
-    private spawnDrone(role: string, body: BodyPartConstant[], assignment?: Id<any>): ScreepsReturnCode {
+    private spawnDrone(role: string, body: BodyPartConstant[], maxRepeat: number = Infinity, assignment?: Id<any>): ScreepsReturnCode {
         const newName = `${role}_${Game.time}`;
         if (this.spawns.length > 0) {
-            return this.spawns[0].spawnCreep(body, newName, {
+            return this.spawns[0].spawnCreep(this.getLargestBody(body, maxRepeat), newName, {
                 memory: {
                     colony: this.name,
                     assignment: assignment || "" as Id<any>,
@@ -157,6 +157,15 @@ export class Colony {
         }
 
         return ERR_NOT_FOUND;
+    }
+
+    private getLargestBody(pattern: BodyPartConstant[], maxRepeat: number = Infinity): BodyPartConstant[] {
+        let body: BodyPartConstant[] = [];
+        const cost = Drone.bodyCost(pattern);
+        const repeat = Math.min(Math.floor(this.room.energyAvailable / cost), maxRepeat);
+        for (let i = 0; i < repeat; i++)
+            body = body.concat(pattern);
+        return body;
     }
 
     private handleTower(tower: StructureTower): void {
@@ -266,7 +275,7 @@ export class Colony {
         }
         if (this.containers.length > 0) {
             if (this.dronesByRole("worker").length < 4) {
-                this.spawnDrone("worker", [WORK, CARRY, MOVE], this.controller.id);
+                this.spawnDrone("worker", [WORK, CARRY, MOVE], Infinity, this.controller.id);
                 return;
             }
         }
